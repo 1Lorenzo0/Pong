@@ -28,13 +28,9 @@ class BALL:
     def check_ball_on_screen(self):
         next_pos_x = self.position.x + self.direction.x * self.speed
         next_pos_y = self.position.y + self.direction.y * self.speed
-        print(next_pos_x)
-        print(next_pos_y)
         if next_pos_x >= game_width or next_pos_x <= 20:
-            print("check1")
             self.direction.x *= -1
         if next_pos_y >= game_height or next_pos_y <= 5:
-            print("check2")
             self.direction.y *= -1
         else:
             self.position = Vector2(next_pos_x, next_pos_y)
@@ -60,12 +56,14 @@ class COLLIDER:
 
 
 class BAR:
-    def __init__(self, height, width):
+    def __init__(self, height, width, position=None):
+        if position is None:
+            print("Error, position not mentioned")
         self.direction = Vector2(0, 0)
         self.width = width
         self.height = height
         self.speed = 1000 * deltaTime
-        self.position = Vector2(game_width - 2/50 * game_width, game_height / 2 - 100 )
+        self.position = position
         self.collider = self.set_collision()
 
     def draw_bar(self):
@@ -105,29 +103,34 @@ class BAR:
 
 class MAIN:
     def __init__(self):
-        self.bar = BAR(1.5/100*game_height, 2/10*game_width)
+        self.bars = self.set_bars()
         self.score = Vector2(0, 0)
         self.ball = BALL()
 
     def set_screen(self):
-        self.bar.draw_bar()
+        self.bars[0].draw_bar()
+        self.bars[1].draw_bar()
         self.ball.draw_ball()
 
     def update(self):
         screen.fill((0, 0, 0))
-        self.bar.move_bar()
+        self.update_bars()
         self.ball.move_ball()
         collision = self.check_ball_collision()
         self.change_ball_direction(collision)
 
-    def check_ball_collision(self):
-        if self.ball.collider.check_collision(self.bar.collider[0]): #top
+    def check_ball_collision(self) -> str:
+        if (self.ball.collider.check_collision(self.bars[0].collider[0]) or
+                self.ball.collider.check_collision(self.bars[1].collider[0])):
             return "top"
-        elif self.ball.collider.check_collision(self.bar.collider[1]): #middle
+        elif (self.ball.collider.check_collision(self.bars[0].collider[1]) or
+              self.ball.collider.check_collision(self.bars[1].collider[1])):
             return "middle"
-        elif self.ball.collider.check_collision(self.bar.collider[2]): #bottom
+        elif (self.ball.collider.check_collision(self.bars[0].collider[2]) or
+              self.ball.collider.check_collision(self.bars[1].collider[2])):
             return "bottom"
         return "False"
+
 
     def change_ball_direction(self, collision):
         if collision == "top":
@@ -143,6 +146,18 @@ class MAIN:
 
         if collision != "False":
             self.ball.direction.x = self.ball.direction.x * -1  #hit ball -> turn back always
+
+    def set_bars(self) -> list[BAR]:
+        right_bar = Vector2(game_width - 2 / 50 * game_width, game_height / 2 - 100)
+        left_bar = Vector2(2 / 50 * game_width, game_height / 2 - 100)
+        bar_left = BAR(1.5 / 100 * game_height, 2 / 10 * game_width, left_bar)
+        bar_right = BAR(1.5 / 100 * game_height, 2 / 10 * game_width, right_bar)
+        return [bar_left, bar_right]
+
+    def update_bars(self):
+        self.bars[0].move_bar()
+        self.bars[1].move_bar()
+
 
 pygame.init()
 screen = pygame.display.set_mode((game_width, game_height))
@@ -161,17 +176,16 @@ while True:
         if event.type == SCREEN_UPDATE:
             main_game.update()
         if event.type == pygame.KEYDOWN:
-            print("KEYDOWN")
             start_time_press = time.time()
             key_pressed = True
             if event.key == pygame.K_UP:
-                main_game.bar.direction[1] = -1
+                main_game.bars[0].direction[1] = -1
             if event.key == pygame.K_DOWN:
-                main_game.bar.direction[1] = 1
+                main_game.bars[0].direction[1] = 1
         if event.type == pygame.KEYUP:
-            if event.key == pygame.K_DOWN and main_game.bar.direction[1] == -1:
+            if event.key == pygame.K_DOWN and main_game.bars[0].direction[1] == -1:
                 continue
-            if event.key == pygame.K_UP and main_game.bar.direction[1] == 1:
+            if event.key == pygame.K_UP and main_game.bars[0].direction[1] == 1:
                 key_pressed = True
                 continue
             key_pressed = False
