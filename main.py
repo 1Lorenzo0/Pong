@@ -2,7 +2,6 @@ import pygame
 import sys
 import time
 from pygame.math import Vector2
-
 game_width = 1000.0
 game_height = 1000.0
 key_pressed = False
@@ -74,7 +73,7 @@ class BAR:
         pygame.draw.rect(screen, (255, 255, 0), bar)
 
     def move_bar(self):
-        self.position = self.position + self.direction * self.speed
+        self.change_position()
         self.collider = self.set_collision()
         self.draw_bar()
         if not key_pressed:
@@ -95,6 +94,14 @@ class BAR:
         collider[1] = COLLIDER(bar_position[1], self.height / 2, self.width / 3)
         collider[2] = COLLIDER(bar_position[2], self.height / 2, self.width / 3)
         return collider
+
+    def change_position(self):
+        new_pos = self.position + self.direction * self.speed
+        if new_pos.y + self.width - 10 > game_height or new_pos.y < 0:
+            return
+        else:
+            self.position = new_pos
+
 
 class MAIN:
     def __init__(self):
