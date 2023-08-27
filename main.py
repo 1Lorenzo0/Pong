@@ -9,6 +9,22 @@ clock = pygame.time.Clock()
 deltaTime = clock.tick(60) / 1000.0
 
 
+class AI:
+    def __init__(self, paddle, ball):
+        self.paddle = paddle
+        self.ball = ball
+
+    def move(self):
+        y_diff = self.ball.position.y - self.paddle.position.y
+
+        max_speed = 1
+
+        if abs(y_diff) < max_speed:
+            self.paddle.direction.y = y_diff
+        else:
+            self.paddle.direction.y = max_speed if y_diff > 0 else -max_speed
+        self.paddle.move_bar()
+
 class BALL:
     def __init__(self):
         self.position = Vector2(game_width/2, game_height/2 - 100 )
@@ -28,13 +44,21 @@ class BALL:
     def check_ball_on_screen(self):
         next_pos_x = self.position.x + self.direction.x * self.speed
         next_pos_y = self.position.y + self.direction.y * self.speed
-        if next_pos_x >= game_width or next_pos_x <= 20:
-            self.direction.x *= -1
         if next_pos_y >= game_height or next_pos_y <= 5:
             self.direction.y *= -1
         else:
             self.position = Vector2(next_pos_x, next_pos_y)
 
+    def check_goal(self, score):
+        next_pos_x = self.position.x + self.direction.x * self.speed
+        if next_pos_x >= game_width:
+            score[0] += 1
+            self.direction.x = -1
+            self.position.x, self.position.y = game_width / 2, game_height / 2 - 100
+        elif next_pos_x <= 0:
+            score[1] += 1
+            self.direction.x = 1
+            self.position.x, self.position.y = game_width/2, game_height/2 - 100
 
 class COLLIDER:
     def __init__(self, position, radius_x, radius_y):
@@ -52,7 +76,7 @@ class COLLIDER:
             return False
 
     def set_collider_position(self, new_position):
-        self.position  = new_position
+        self.position = new_position
 
 
 class BAR:
@@ -106,6 +130,7 @@ class MAIN:
         self.bars = self.set_bars()
         self.score = Vector2(0, 0)
         self.ball = BALL()
+        self.ai_bar = AI(self.bars[1], self.ball)
 
     def set_screen(self):
         self.bars[0].draw_bar()
@@ -116,6 +141,7 @@ class MAIN:
         screen.fill((0, 0, 0))
         self.update_bars()
         self.ball.move_ball()
+        self.ball.check_goal(self.score)
         collision = self.check_ball_collision()
         self.change_ball_direction(collision)
 
@@ -134,29 +160,31 @@ class MAIN:
 
     def change_ball_direction(self, collision):
         if collision == "top":
+            print("top")
             if self.ball.direction.y == 0:
                 self.ball.direction.y = -1
-            else:
-                self.ball.direction.y = self.ball.direction.y * -1
         elif collision == "bottom":
+            print("bottom")
             if self.ball.direction.y == 0:
                 self.ball.direction.y = 1
-            else:
-                self.ball.direction.y = self.ball.direction.y * -1
+        elif collision == "middle":
+            print("middle")
+            self.ball.direction.y = 0
 
         if collision != "False":
             self.ball.direction.x = self.ball.direction.x * -1  #hit ball -> turn back always
+            self.ball.speed += 1
 
     def set_bars(self) -> list[BAR]:
         right_bar = Vector2(game_width - 2 / 50 * game_width, game_height / 2 - 100)
-        left_bar = Vector2(2 / 50 * game_width, game_height / 2 - 100)
+        left_bar = Vector2(2 / 50 * game_width - 15, game_height / 2 - 100)
         bar_left = BAR(1.5 / 100 * game_height, 2 / 10 * game_width, left_bar)
         bar_right = BAR(1.5 / 100 * game_height, 2 / 10 * game_width, right_bar)
         return [bar_left, bar_right]
 
     def update_bars(self):
         self.bars[0].move_bar()
-        self.bars[1].move_bar()
+        self.ai_bar.move()
 
 
 pygame.init()
@@ -176,7 +204,6 @@ while True:
         if event.type == SCREEN_UPDATE:
             main_game.update()
         if event.type == pygame.KEYDOWN:
-            start_time_press = time.time()
             key_pressed = True
             if event.key == pygame.K_UP:
                 main_game.bars[0].direction[1] = -1
