@@ -9,6 +9,7 @@ clock = pygame.time.Clock()
 deltaTime = clock.tick(60) / 1000.0
 
 
+
 class AI:
     def __init__(self, paddle, ball):
         self.paddle = paddle
@@ -126,10 +127,11 @@ class BAR:
 
 
 class MAIN:
-    def __init__(self):
+    def __init__(self, font = None):
         self.bars = self.set_bars()
         self.score = Vector2(0, 0)
         self.ball = BALL()
+        self.font = pygame.font.Font(font,36)
         self.ai_bar = AI(self.bars[1], self.ball)
 
     def set_screen(self):
@@ -142,6 +144,7 @@ class MAIN:
         self.update_bars()
         self.ball.move_ball()
         self.ball.check_goal(self.score)
+        self.draw_score()
         collision = self.check_ball_collision()
         self.change_ball_direction(collision)
 
@@ -160,15 +163,12 @@ class MAIN:
 
     def change_ball_direction(self, collision):
         if collision == "top":
-            print("top")
             if self.ball.direction.y == 0:
                 self.ball.direction.y = -1
         elif collision == "bottom":
-            print("bottom")
             if self.ball.direction.y == 0:
                 self.ball.direction.y = 1
         elif collision == "middle":
-            print("middle")
             self.ball.direction.y = 0
 
         if collision != "False":
@@ -186,13 +186,17 @@ class MAIN:
         self.bars[0].move_bar()
         self.ai_bar.move()
 
+    def draw_score(self):
+        score_text = self.font.render(f'{int(self.score.x)} - {int(self.score.y)}', True, (255,255,255))
+        screen.blit(score_text, (game_width/2 - len(f'Score: {self.score}'),20))
 
 pygame.init()
+pygame.font.init()
 screen = pygame.display.set_mode((game_width, game_height))
 main_game = MAIN()
 
 SCREEN_UPDATE = pygame.USEREVENT
-pygame.time.set_timer(SCREEN_UPDATE,100)
+pygame.time.set_timer(SCREEN_UPDATE,16)
 screen.fill((0, 0, 0))
 
 main_game.set_screen()
