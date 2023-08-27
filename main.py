@@ -8,7 +8,8 @@ key_pressed = False
 clock = pygame.time.Clock()
 deltaTime = clock.tick(60) / 1000.0
 
-
+scored = False
+scorer = "None" #Left or Right
 
 class AI:
     def __init__(self, paddle, ball):
@@ -51,15 +52,20 @@ class BALL:
             self.position = Vector2(next_pos_x, next_pos_y)
 
     def check_goal(self, score):
+        global scored
         next_pos_x = self.position.x + self.direction.x * self.speed
         if next_pos_x >= game_width:
             score[0] += 1
-            self.direction.x = -1
+            self.direction.x = 0
+            self.direction.y = 0
             self.position.x, self.position.y = game_width / 2, game_height / 2 - 100
+            scored = True
         elif next_pos_x <= 0:
             score[1] += 1
-            self.direction.x = 1
+            self.direction.x = 0
+            self.direction.y = 0
             self.position.x, self.position.y = game_width/2, game_height/2 - 100
+            scored = True
 
 class COLLIDER:
     def __init__(self, position, radius_x, radius_y):
@@ -127,9 +133,10 @@ class BAR:
 
 
 class MAIN:
-    def __init__(self, font = None):
+    def __init__(self, font=None):
         self.bars = self.set_bars()
         self.score = Vector2(0, 0)
+        self.last_scorer = "None"
         self.ball = BALL()
         self.font = pygame.font.Font(font,36)
         self.ai_bar = AI(self.bars[1], self.ball)
@@ -173,7 +180,6 @@ class MAIN:
 
         if collision != "False":
             self.ball.direction.x = self.ball.direction.x * -1  #hit ball -> turn back always
-            self.ball.speed += 1
 
     def set_bars(self) -> list[BAR]:
         right_bar = Vector2(game_width - 2 / 50 * game_width, game_height / 2 - 100)
@@ -190,13 +196,15 @@ class MAIN:
         score_text = self.font.render(f'{int(self.score.x)} - {int(self.score.y)}', True, (255,255,255))
         screen.blit(score_text, (game_width/2 - len(f'Score: {self.score}'),20))
 
+
+
 pygame.init()
 pygame.font.init()
 screen = pygame.display.set_mode((game_width, game_height))
 main_game = MAIN()
 
 SCREEN_UPDATE = pygame.USEREVENT
-pygame.time.set_timer(SCREEN_UPDATE,16)
+pygame.time.set_timer(SCREEN_UPDATE,16) #60 fps
 screen.fill((0, 0, 0))
 
 main_game.set_screen()
@@ -213,6 +221,13 @@ while True:
                 main_game.bars[0].direction[1] = -1
             if event.key == pygame.K_DOWN:
                 main_game.bars[0].direction[1] = 1
+            if event.key == pygame.K_RETURN:
+                if scored:
+                    if scorer == 'Left':
+                        main_game.ball.direction.x = 1
+                    else:
+                        main_game.ball.direction.x = -1
+                    scored = False
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_DOWN and main_game.bars[0].direction[1] == -1:
                 continue
